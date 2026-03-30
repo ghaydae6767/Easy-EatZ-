@@ -1,0 +1,183 @@
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+// Full global cuisine list
+const allCuisines = [
+  "Afghan","Albanian","Algerian","American","Argentinian","Armenian","Australian",
+  "Austrian","Bangladeshi","Belgian","Brazilian","British","Bulgarian","Cambodian",
+  "Canadian","Chilean","Chinese","Colombian","Croatian","Cuban","Czech","Danish",
+  "Dutch","Egyptian","Ethiopian","Filipino","Finnish","French","Georgian","German",
+  "Greek","Hungarian","Icelandic","Indian","Indonesian","Iranian","Iraqi","Irish",
+  "Israeli","Italian","Jamaican","Japanese","Jordanian","Kazakh","Kenyan","Korean",
+  "Kuwaiti","Lebanese","Libyan","Malaysian","Mexican","Moroccan","Nepalese","New Zealand",
+  "Nigerian","Norwegian","Omani","Pakistani","Peruvian","Philippine","Polish","Portuguese",
+  "Qatari","Romanian","Russian","Saudi","Scottish","Serbian","Singaporean","Slovak",
+  "South African","Spanish","Sri Lankan","Sudanese","Swedish","Swiss","Syrian","Taiwanese",
+  "Tanzanian","Thai","Tunisian","Turkish","Ukrainian","Uruguayan","Uzbek","Venezuelan",
+  "Vietnamese","Yemeni"
+];
+
+const calculateNutrition = () => ({
+  carbs: Math.floor(Math.random() * 100),
+  protein: Math.floor(Math.random() * 100),
+  fats: Math.floor(Math.random() * 100),
+  vitamins: "A, B, C",
+  minerals: "Iron, Calcium",
+  fiber: Math.floor(Math.random() * 30),
+  water: "500ml"
+});
+
+export default function EazyEatsApp() {
+  const [ingredients, setIngredients] = useState("");
+  const [cuisine, setCuisine] = useState("");
+  const [people, setPeople] = useState(1);
+  const [allergies, setAllergies] = useState("");
+  const [picky, setPicky] = useState(false);
+  const [recipe, setRecipe] = useState("");
+  const [nutrition, setNutrition] = useState(null);
+  const [weeklyPlan, setWeeklyPlan] = useState([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("eazyEatsData");
+    if (saved) {
+      const data = JSON.parse(saved);
+      setIngredients(data.ingredients || "");
+      setCuisine(data.cuisine || "");
+      setPeople(data.people || 1);
+      setAllergies(data.allergies || "");
+      setPicky(data.picky || false);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "eazyEatsData",
+      JSON.stringify({ ingredients, cuisine, people, allergies, picky })
+    );
+  }, [ingredients, cuisine, people, allergies, picky]);
+
+  const generateRecipe = () => {
+    const selectedCuisine = cuisine || "Global Fusion";
+
+    const pickyNote = picky
+      ? "Kid-friendly, simple flavors."
+      : "Authentic traditional flavors.";
+
+    const text = `🌍 ${selectedCuisine} Recipe\n\nIngredients available: ${ingredients}\nAvoid: ${allergies}\n\n${pickyNote}\nServes: ${people}\n\nStep 1: Prepare ingredients according to ${selectedCuisine} style\nStep 2: Use traditional spices and cooking methods\nStep 3: Cook thoroughly and serve\n\n(Connect AI here for real cultural recipes)`;
+
+    setRecipe(text);
+    setNutrition(calculateNutrition());
+  };
+
+  const filteredCuisines = allCuisines.filter(c =>
+    c.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const generateWeeklyPlan = () => {
+    const shuffled = [...allCuisines].sort(() => 0.5 - Math.random());
+    const plan = shuffled.slice(0, 7).map((c, i) => ({
+      day: `Day ${i + 1}`,
+      meal: `${c} cuisine`
+    }));
+    setWeeklyPlan(plan);
+  };
+
+  return (
+    <div className="p-6 grid gap-6">
+      <h1 className="text-2xl font-bold">eaZy Eats 🌍🍱</h1>
+
+      <Card>
+        <CardContent className="p-4 grid gap-3">
+          <input
+            className="border p-2 rounded"
+            placeholder="Ingredients (chicken, rice...)"
+            value={ingredients}
+            onChange={(e) => setIngredients(e.target.value)}
+          />
+
+          <input
+            className="border p-2 rounded"
+            placeholder="Search cuisine..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="border p-2 rounded"
+            value={cuisine}
+            onChange={(e) => setCuisine(e.target.value)}
+          >
+            <option value="">Select a cuisine 🌍</option>
+            {filteredCuisines.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            min="1"
+            max="100"
+            className="border p-2 rounded"
+            value={people}
+            onChange={(e) => setPeople(Number(e.target.value))}
+          />
+
+          <input
+            className="border p-2 rounded"
+            placeholder="Allergies"
+            value={allergies}
+            onChange={(e) => setAllergies(e.target.value)}
+          />
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={picky}
+              onChange={(e) => setPicky(e.target.checked)}
+            />
+            Picky eater (kids lunch mode)
+          </label>
+
+          <Button onClick={generateRecipe}>Generate Recipe</Button>
+          <Button onClick={generateWeeklyPlan}>Global Weekly Plan 🌍</Button>
+        </CardContent>
+      </Card>
+
+      {recipe && (
+        <Card>
+          <CardContent className="p-4 whitespace-pre-wrap">
+            {recipe}
+          </CardContent>
+        </Card>
+      )}
+
+      {nutrition && (
+        <Card>
+          <CardContent className="p-4">
+            <h2 className="font-bold mb-2">Nutrition</h2>
+            <p>Carbs: {nutrition.carbs}g</p>
+            <p>Protein: {nutrition.protein}g</p>
+            <p>Fats: {nutrition.fats}g</p>
+            <p>Fiber: {nutrition.fiber}g</p>
+            <p>Vitamins: {nutrition.vitamins}</p>
+            <p>Minerals: {nutrition.minerals}</p>
+            <p>Water: {nutrition.water}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {weeklyPlan.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <h2 className="font-bold mb-2">🌍 Weekly Global Plan</h2>
+            {weeklyPlan.map((d) => (
+              <p key={d.day}>{d.day}: {d.meal}</p>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
